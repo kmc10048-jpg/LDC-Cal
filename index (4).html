@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LDC Content Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one screen tool. Title row, controls, month grid. Click a post for details. */
+  --ink:#15294a;
+  --paper:#f1f6fb;
+  --card:#ffffff;
+  --muted:#556580;
+  --line:#d6e2ef;
+  --accent:#1f4f9b;
+  --ldc-navy:#1f4f9b;
+  --ldc-blue:#00adef;
+  --ldc-green:#8dc63f;
+  --ldc-sky:#cdeffb;
+  --c-li:#1f4f9b;
+  --c-ig:#c2347a;
+  --c-x:#2b2f36;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#e6eef8;--paper:#0d1626;--card:#152238;--muted:#9fb0c8;--line:#26395a;--accent:#4fc3f7;
+    --ldc-navy:#1f4f9b;--ldc-sky:#1b3456;--c-li:#6fa3f0;--c-ig:#e46aa6;--c-x:#c9ced6;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e6eef8;--paper:#0d1626;--card:#152238;--muted:#9fb0c8;--line:#26395a;--accent:#4fc3f7;
+  --ldc-navy:#1f4f9b;--ldc-sky:#1b3456;--c-li:#6fa3f0;--c-ig:#e46aa6;--c-x:#c9ced6;color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ldc-green);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px 48px}
+.band{background:var(--ldc-navy);color:#fff;border-bottom:6px solid var(--ldc-blue)}
+.band .in{max-width:1180px;margin:0 auto;padding:26px 20px 0;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.band h1{color:#fff}
+.band p{margin:4px 0 0;color:#d7e6f7}
+.brand{font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ldc-blue);margin-bottom:6px}
+.tabs{display:flex;gap:4px}
+.tabs a{color:#d7e6f7;text-decoration:none;font-weight:700;padding:10px 16px;border-radius:8px 8px 0 0}
+.tabs a[aria-current="page"]{background:var(--paper);color:var(--ldc-navy)}
+.tabs a:hover{color:#fff}
+.tabs a[aria-current="page"]:hover{color:var(--ldc-navy)}
+.view[hidden]{display:none}
+
+h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,3.6vw,36px);margin:0;letter-spacing:-.01em}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.top p{margin:4px 0 0;color:var(--muted)}
+.key{display:flex;gap:8px;flex-wrap:wrap}
+.key button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px;cursor:pointer;font-size:15px}
+.key button .dot{width:11px;height:11px;border-radius:50%;background:var(--cc)}
+.key button b{font-weight:700}
+.key button small{color:var(--muted);font-size:14px}
+.key button[aria-pressed="false"]{opacity:.4}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.months{display:flex;gap:6px;flex-wrap:wrap}
+.months button{border:1px solid var(--line);background:var(--card);padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px}
+.months button[aria-pressed="true"]{background:var(--ldc-navy);color:#fff;border-color:var(--ldc-navy)}
+.focus{color:var(--muted);font-size:15px}
+.focus b{color:var(--ink)}
+
+.cal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.dow{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:2px 6px}
+.day{background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:118px;padding:8px;display:flex;flex-direction:column;gap:5px}
+.day.out{background:transparent;border-style:dashed;opacity:.45}
+.day.off{background:var(--paper)}
+.dn{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.dn em{font-style:normal;font-weight:600;font-size:12px;color:var(--muted)}
+.post{display:block;width:100%;text-align:left;border:0;border-left:4px solid var(--cc);background:var(--paper);border-radius:5px;padding:5px 8px;cursor:pointer;font-size:13.5px;line-height:1.25}
+.post:hover{background:color-mix(in srgb,var(--cc) 12%,var(--card))}
+.post b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--cc)}
+.post.big{box-shadow:inset 0 0 0 2px var(--ldc-green)}
+
+.list{display:none;gap:8px}
+.lday{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px}
+.lday h3{margin:0;font-size:15px}
+.lday .post{font-size:15px;padding:7px 10px}
+@media (max-width:760px){.cal{display:none}.list{display:grid}}
+
+.foot{margin-top:14px;color:var(--muted);font-size:14px}
+
+.scrim{position:fixed;inset:0;background:rgba(10,16,27,.4);opacity:0;pointer-events:none;transition:opacity .15s;z-index:40}
+.scrim.open{opacity:1;pointer-events:auto}
+.panel{position:fixed;top:0;right:0;height:100%;width:min(420px,100%);background:var(--card);border-left:1px solid var(--line);z-index:50;transform:translateX(100%);transition:transform .2s ease;overflow-y:auto;padding:22px 24px}
+.panel.open{transform:none}
+@media (prefers-reduced-motion: reduce){.panel,.scrim{transition:none}}
+.panel .x{float:right;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:5px 11px;cursor:pointer}
+.tag{display:inline-block;font-weight:700;font-size:13px;color:#fff;background:var(--cc);padding:3px 9px;border-radius:5px}
+.panel h2{font-family:var(--display);font-size:22px;line-height:1.2;margin:12px 0 4px}
+.panel .when{color:var(--muted)}
+.panel dl{margin:18px 0 0;display:grid;gap:12px}
+.panel dt{font-size:13px;font-weight:700;color:var(--muted)}
+.panel dd{margin:2px 0 0}
+.post[draggable="true"]{cursor:grab}
+.post.dragging{opacity:.4}
+.post .mv{float:right;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.day.drop{outline:2px dashed var(--ldc-blue);outline-offset:-3px;background:color-mix(in srgb,var(--ldc-blue) 8%,var(--card))}
+.reset{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px;font-weight:600}
+.reset[hidden]{display:none}
+.right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.panel .move{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);display:grid;gap:8px}
+.panel .move label{font-size:13px;font-weight:700;color:var(--muted)}
+.panel .move .row{display:flex;gap:8px;flex-wrap:wrap}
+.panel .move input{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+.panel .move button{border:0;background:var(--ldc-navy);color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:700}
+.panel .msg{font-size:14px;color:var(--muted);min-height:1.2em}
+.howto{display:grid;gap:18px;max-width:980px}
+.howto .lead{color:var(--muted);font-size:17px;max-width:68ch}
+.hcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;display:grid;grid-template-columns:220px 1fr;gap:22px}
+.hcard h2{font-family:var(--display);font-size:22px;margin:0}
+.hcard ol,.hcard ul{margin:0;padding-left:20px;display:grid;gap:8px;font-size:15.5px}
+.hcard b{font-weight:700}
+@media (max-width:820px){.hcard{grid-template-columns:1fr}}
+.plat{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.plat > div{border:1px solid var(--line);border-top:5px solid var(--cc);border-radius:10px;padding:14px;background:var(--paper)}
+.plat h3{margin:0;font-size:17px}
+.plat .n{font-family:var(--display);font-weight:800;font-size:22px;color:var(--cc);margin:2px 0 8px}
+.plat ul{padding-left:18px;gap:6px;font-size:14.5px}
+@media (max-width:820px){.plat{grid-template-columns:1fr}}
+.howto .all{background:var(--ldc-sky)}
+
+.panel .canva{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);display:grid;gap:8px}
+.panel .canva h3{margin:0;font-size:13px;font-weight:700;color:var(--muted)}
+.cv{display:grid;gap:2px;text-decoration:none;border:1px solid var(--line);border-left:4px solid #00c4cc;border-radius:8px;padding:9px 12px;background:var(--paper);color:var(--ink)}
+.cv:hover{border-color:#00c4cc}
+.cv b{color:#7d2ae8;font-size:14px}
+.cv span{font-size:14px;color:var(--muted);word-break:break-word}
+.cv.mine{border-left-color:var(--ldc-green)}
+.panel .none{margin:0;font-size:15px;color:var(--muted)}
+.panel .canva label{font-size:13px;font-weight:700;color:var(--muted);margin-top:6px}
+.panel .canva .row{display:flex;gap:8px}
+.panel .canva input{flex:1;min-width:0;font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+.panel .canva button{border:0;background:var(--ldc-navy);color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font-weight:700}
+.cvlist{display:grid;gap:8px}
+
+.xl{border:0;background:var(--ldc-green);color:#13304f;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700;font-size:14px}
+.xl:hover{filter:brightness(1.05)}
+.xlmsg{font-size:13px;color:var(--muted)}
+
+.sync{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--muted);padding:2px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+.sync[hidden]{display:none}
+.sync[data-kind="ok"]{color:#2f6b12;border-color:var(--ldc-green)}
+.sync[data-kind="warn"]{color:#8a4b00;border-color:#e0a64a}
+.post .mv{max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:none;letter-spacing:0}
+
+.panel .move[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="band">
+  <div class="in">
+    <div>
+      <div class="brand">Literacy Design Collaborative</div>
+      <h1>LDC Content Calendar</h1>
+      <p>January to June 2027 for LinkedIn, Instagram and X.</p>
+    </div>
+    <nav class="tabs" aria-label="Pages">
+      <a href="#calendar" id="tCal">Calendar</a>
+      <a href="#how" id="tHow">How to use</a>
+    </nav>
+  </div>
+</div>
+<div class="wrap">
+<div class="view" id="vCal">
+  <div class="top">
+    <div>
+      <p>Click a post to see what to share. Drag a post to another day to move it.</p>
+      <span class="sync" id="sync" hidden></span>
+    </div>
+    <div class="right">
+      <div class="key" id="key" role="group" aria-label="Show platforms"></div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="months" id="months" role="group" aria-label="Month"></div>
+    <div class="right">
+      <div class="focus" id="focus"></div>
+      <button class="reset" id="reset" hidden>Undo all moves</button>
+      <button class="xl" id="xlBtn">Download Excel</button>
+      <span class="xlmsg" id="xlMsg" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <div class="cal" id="cal"></div>
+  <div class="list" id="list"></div>
+
+  <p class="foot">Green outline = recruitment or campaign post. Anything in [brackets] needs a name, photo or date from LDC. Holidays are shaded and nothing posts on them.</p>
+</div>
+
+<div class="view howto" id="vHow" hidden>
+  <p class="lead">This calendar shows every planned post for LinkedIn, Instagram and X from January to June 2027. Here is how to use it week to week.</p>
+
+  <section class="hcard">
+    <h2>Using the calendar</h2>
+    <ol>
+      <li><b>Pick a month</b> with the buttons above the calendar. Each month has a focus written on the right.</li>
+      <li><b>Show or hide a platform</b> by clicking LinkedIn, Instagram or X at the top. Hide two to see one platform's plan on its own.</li>
+      <li><b>Click any post</b> to see what to post, how to write the caption, and what to do after it goes up.</li>
+      <li><b>Open the Canva layout</b> from inside the post. Each post tells you which file and which page to use. Make a copy before editing so the template stays clean.</li>
+      <li><b>Save your own Canva link</b> in any post if your team makes a better version. It applies to every post of that type, and on the Claude link everyone sees it.</li>
+      <li><b>Move a post</b> by dragging it to another day. To move it to a different month, open the post and pick a new date at the bottom. On a phone, use the date picker.</li>
+      <li><b>Moves are shared on the Claude link.</b> Anyone with edit access can move posts, and everyone sees the change right away with the person's name, like "Moved by Kaylee." People with view-only access see the moves but can't make them. On the GitHub copy, moves save only in your own browser.</li>
+      <li><b>Undo moves</b> with the "Undo all moves" button (click it twice to confirm). This puts every post back for everyone, so check with the team first.</li>
+      <li><b>Download Excel</b> to get every post from January to June in a spreadsheet, with a tab for each platform and empty Status and Notes columns for tracking. Moved posts show their new date and who moved them.</li>
+      <li><b>Fill in the brackets.</b> Anything in [brackets] needs a teacher name, photo, event or deadline from LDC before it posts.</li>
+    </ol>
+  </section>
+
+  <section class="hcard">
+    <h2>Canva templates</h2>
+    <div class="cvlist">
+      <a class="cv" href="https://www.canva.com/d/cxBGg-si9n9C4xd" target="_blank" rel="noopener"><b>LinkedIn post templates</b><span>Event recap, Try this, Did you know, Partner win, Teacher story, Behind the work, Question, Free resource</span></a>
+      <a class="cv" href="https://www.canva.com/d/MuGLVuUUw-AjSwI" target="_blank" rel="noopener"><b>Instagram carousel templates</b><span>Mini lesson and Educator spotlight slides (4:5)</span></a>
+      <a class="cv" href="https://www.canva.com/d/7EQ_dz7I6U3odEt" target="_blank" rel="noopener"><b>Instagram Reel cover + Story templates</b><span>Classroom moment, Teacher explains, Live from event, Deadline countdown, Poll, Thank you</span></a>
+      <a class="cv" href="https://www.canva.com/d/eFtRSaKLjuiphj4" target="_blank" rel="noopener"><b>X post templates</b><span>Stat chart and Dialogue 250 recruitment</span></a>
+      <a class="cv" href="https://www.canva.com/design/DAHaV6s53zA/9TgBQPjD7Gl1seB9hH8DIg/edit?utm_content=DAHaV6s53zA&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton" target="_blank" rel="noopener"><b>LDC Recruitment Flyers</b><span>Page 3 school leaders, 4 teachers, 8 Dialogue 250 one-pager, 9 E2A</span></a>
+    </div>
+  </section>
+
+  <section class="hcard">
+    <h2>What each platform does</h2>
+    <div class="plat">
+      <div style="--cc:var(--c-li)">
+        <h3>LinkedIn</h3><div class="n">2x a week</div>
+        <ul>
+          <li>For district and state leaders who choose curriculum and PD</li>
+          <li>Tuesday is always an event recap with photos of people</li>
+          <li>Thursday rotates tips, teacher stories, partner wins and stats</li>
+          <li>End posts with a question</li>
+          <li>Ask staff to repost every week (1.5x more engagement)</li>
+        </ul>
+      </div>
+      <div style="--cc:var(--c-ig)">
+        <h3>Instagram</h3><div class="n">2x a week</div>
+        <ul>
+          <li>For teachers, school staff, parents and donors</li>
+          <li>Monday: one carousel (mini lesson or educator spotlight)</li>
+          <li>Thursday: one Reel of a classroom moment</li>
+          <li>Add a few Stories each week, especially at events</li>
+          <li>Carousels get 43% more engagement than single images</li>
+        </ul>
+      </div>
+      <div style="--cc:var(--c-x)">
+        <h3>X</h3><div class="n">1x a week</div>
+        <ul>
+          <li>For education reporters, researchers and policymakers</li>
+          <li>Wednesday rotates a stat chart, an event recap, and replies</li>
+          <li>Put links in the first reply, not the post</li>
+          <li>Pin one post that explains what LDC does</li>
+          <li>Charts get 2.5x more engagement</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="hcard">
+    <h2>Writing posts so people find them</h2>
+    <ul>
+      <li><b>Write out "Literacy Design Collaborative"</b> at least once in every post. Google and AI tools have a hard time with "LDC."</li>
+      <li><b>Spell out program names</b> like Dialogue 250 and EIR the first time.</li>
+      <li><b>Instagram captions:</b> use the words teachers search, like "civic discussion lesson middle school," and the same few hashtags every time.</li>
+      <li><b>X links go in the first reply.</b> Posts with links can get 30 to 50% less reach.</li>
+      <li><b>Get photo releases first</b> before posting students or teachers.</li>
+      <li><b>Educator spotlights go up as Instagram Collab posts</b> so they show on the teacher's account too.</li>
+    </ul>
+  </section>
+
+  <section class="hcard">
+    <h2>Team routine</h2>
+    <ul>
+      <li><b>Monthly:</b> plan next month's posts a month ahead and fill in every [bracket].</li>
+      <li><b>Weekly:</b> check how last week's posts did and remind staff to repost.</li>
+      <li><b>Monthly:</b> update the results dashboard, and ask ChatGPT and Claude "What is Literacy Design Collaborative?" If the answer is wrong, fix the page it came from.</li>
+      <li><b>Every quarter:</b> review what's working and adjust the plan.</li>
+    </ul>
+  </section>
+
+  <section class="hcard all">
+    <h2>Before any post goes out</h2>
+    <ol>
+      <li>Is it clear who this is for?</li>
+      <li>Is there one main point?</li>
+      <li>Is there a photo of real people or a simple chart?</li>
+      <li>Does every number have a source?</li>
+      <li>Is "Literacy Design Collaborative" written out?</li>
+      <li>Does it end with a question or one clear next step?</li>
+      <li>For recruitment: does it say what people get, what it takes, and the deadline?</li>
+    </ol>
+  </section>
+</div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="panel" id="panel" role="dialog" aria-hidden="true" aria-labelledby="pTitle"></aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const P = {
+  li:{name:"LinkedIn",color:"var(--c-li)",freq:"2x a week"},
+  ig:{name:"Instagram",color:"var(--c-ig)",freq:"2x a week"},
+  x:{name:"X",color:"var(--c-x)",freq:"1x a week"}
+};
+
+const LI_AFTER = "Ask 2 or 3 staff to repost it from their own profiles. Reply to every comment.";
+const TYPES = {
+  // LinkedIn
+  recap:{label:"Event recap",show:"Photos of teachers and leaders at the event, plus one idea they can use right away.",cap:"Write out Literacy Design Collaborative. Name the school or district.",ask:"End with a question, like \"How does your team plan writing units?\"",after:LI_AFTER},
+  partner:{label:"Partner win",show:"The problem the partner had, what they did with Literacy Design Collaborative, and the result, with a source.",cap:"Write out Literacy Design Collaborative and the partner's full name.",ask:"End with: \"What would this look like on your team?\"",after:LI_AFTER},
+  stat:{label:"Stat",show:"One number in a simple chart, with the source underneath.",cap:"Write out Literacy Design Collaborative. Say what the number means for a district.",ask:"End with a question for leaders.",after:LI_AFTER},
+  tip:{label:"Teaching tip",show:"A tip in two steps, with a sample writing task.",cap:"Write out Literacy Design Collaborative and name the grade and subject.",ask:"End with: \"How would you use this in your classroom?\"",after:LI_AFTER},
+  story:{label:"Teacher story",show:"A named teacher's photo and quote about what changed for their students.",cap:"Name the teacher, grade, subject and school.",ask:"End with a question about readers' own classrooms.",after:LI_AFTER},
+  team:{label:"Meet the team",show:"Photo of a staff member, their role, and one tip for teachers.",cap:"Write out Literacy Design Collaborative and the person's role.",ask:"End with a question for teachers.",after:"Have the staff member repost it with their own note."},
+  expert:{label:"Advice for leaders",show:"A staff member answers one question school leaders ask.",cap:"Write out Literacy Design Collaborative.",ask:"End with a question for leaders.",after:"Also post it from the staff member's own profile."},
+  question:{label:"Question",show:"A short question or poll with a classroom photo.",cap:"Keep it to one or two lines.",ask:"Reply to every answer within a day.",after:LI_AFTER},
+  resource:{label:"Free resource",show:"A preview page of the guide and three things inside.",cap:"Write out Literacy Design Collaborative and the resource name.",ask:"Download link and a question about how teams plan.",after:LI_AFTER},
+  event:{label:"Event signup",show:"Event name, date, format and who should come.",cap:"Write out Literacy Design Collaborative.",ask:"Registration link.",after:LI_AFTER},
+  thanks:{label:"Thank you",show:"Photo of the teacher or team and what they did.",cap:"Tag them and name their school.",ask:"Ask people to add their own thanks in the comments.",after:LI_AFTER},
+  news:{label:"Announcement",show:"Who is starting what, and when.",cap:"Write out Literacy Design Collaborative.",ask:"Ask: \"What do you hope to see from this?\"",after:LI_AFTER},
+  recruit:{label:"Recruitment",show:"The flyer as a square image with what people get, what it takes, and the deadline.",cap:"Spell out the program name (Dialogue 250, not D250).",ask:"Apply by [date] with the link.",after:LI_AFTER},
+  // Instagram
+  lesson:{label:"Carousel: mini lesson",show:"4 to 6 slides built from a free CoreTools assignment teachers can use in class right away.",cap:"Use words teachers search, like \"writing lesson middle school science,\" plus the same few hashtags every time.",ask:"\"Send this to a teacher who'd use it.\"",after:"Share it to Stories."},
+  spotlight:{label:"Carousel: educator spotlight",show:"A teacher explains how they teach in their own words, with classroom photos.",cap:"Post it as a Collab post with the teacher. Name their grade, subject and school.",ask:"\"Send this to a teacher friend.\"",after:"Share it to Stories and thank the teacher in the comments."},
+  reel:{label:"Reel: classroom moment",show:"A short video of a seminar or a teacher explaining an assignment. Collect photo releases first.",cap:"Describe what's happening in plain words teachers would search for.",ask:"\"Send this to someone who teaches [subject].\"",after:"Share it to Stories."},
+  igrecruit:{label:"Recruitment",show:"The flyer as a carousel: what you get, what it takes, deadline.",cap:"Spell out Dialogue 250 and name the states and grades.",ask:"\"Tag a teacher who should apply.\" Link in bio.",after:"Add a countdown sticker in Stories."},
+  igthanks:{label:"Thank you",show:"Photos of teachers with a short thank-you on each slide.",cap:"Tag every school and teacher shown.",ask:"\"Tag a teacher you want to thank.\"",after:"Reshare tagged Stories."},
+  // X
+  xstat:{label:"Stat chart",show:"One Literacy Design Collaborative finding as a simple chart uploaded to the post.",cap:"Spell out every name. Put the link in the first reply, not the post.",ask:"Ask what others are seeing.",after:"Reply to anyone who responds."},
+  xrecap:{label:"Event recap",show:"A photo of people from the event and one key quote.",cap:"Tag speakers and partners. Link in the first reply.",ask:"Ask who else attended.",after:"Reply to anyone who responds."},
+  xreply:{label:"Replies",show:"Reply to 3 to 5 posts from education reporters, researchers or policymakers with a real example, like a CoreTools assignment.",cap:"Add something useful, not just agreement.",ask:"Link only if it helps.",after:"Check back for responses the next day."},
+  xpin:{label:"Pinned post",show:"One post that explains what Literacy Design Collaborative does and who it helps.",cap:"Write everything out. Grok uses public posts to describe organizations.",ask:"Link to ldc.org in the first reply.",after:"Pin it to the top of the profile."},
+  xrecruit:{label:"Recruitment",show:"The flyer image with what people get and the deadline.",cap:"Spell out Dialogue 250 or the program name. Link in the first reply.",ask:"Apply by [date].",after:"Ask partners to repost."}
+};
+
+const IDEAS = {
+  recap:["[Recent PD day]: writing with evidence starts with a clear task","[District] workshop: planning a unit backward from the final essay","[Conference]: what teachers asked us most","[Coaching visit]: one shared task across a grade team","[Webinar]: three ideas teachers took back to class"],
+  thu:[["tip","Write the final task first, then plan backward"],["story","[Teacher], [grade/subject]: knowing the final task on day one"],["partner","[District partner]: what changed after a year of shared writing tasks"],["stat","940+ districts have used Literacy Design Collaborative"],["team","Meet [name], who turns standards into writing tasks"],["tip","Have students mark the evidence they need before reading"],["story","[Science teacher]: students citing sources in lab reports"],["stat","92% of teachers created standards-driven writing assignments (UCLA CRESST)"],["tip","Quote sort: \"proves my claim\" vs. \"just related\""],["team","Meet [name], one of our coaches"]],
+  lesson:["CoreTools mini lesson: argument writing in science","CoreTools mini lesson: civic discussion with a primary source","CoreTools mini lesson: citing evidence in history","CoreTools mini lesson: sentence starters for using evidence","CoreTools mini lesson: plan the final task first"],
+  spotlight:["[Teacher], 8th grade ELA, on quote sorts","[Teacher], science, on arguing from data","[Teacher], history, on primary sources","[D250 fellow] on leading civic discussions"],
+  reel:["Inside a class writing from sources","[Teacher] explains this week's assignment","30 seconds of a student seminar","[Teacher] walks through a CoreTools task"],
+  xstat:["2.4 million+ students reached","9+ months of extra growth (UCLA CRESST)","107,000+ educators have used it","940+ districts"],
+  xrecap:["[Recent event]: one quote from a teacher","[Conference] recap with photo"],
+  xreply:["Reply to reporters covering literacy with a CoreTools example","Reply to researchers with the CRESST finding","Reply to policymakers on civic education with a Dialogue 250 example"]
+};
+
+const FOCUS = [
+  "Planning tips for the new semester. Dialogue 250 applications open Jan 14.",
+  "Civic discussion and primary sources. Push Dialogue 250 before the deadline.",
+  "Results and proof for district leaders before budgets are set.",
+  "\"Real student work, not just test scores.\" Recruit principals for E2A.",
+  "Teacher Appreciation Week, May 3 to 7.",
+  "Look back on the year and promote summer PD."
+];
+
+// [month, day, platform, type, title]
+const SPECIAL = [
+  [0,6,"x","xpin","Pin a post explaining what Literacy Design Collaborative does"],
+  [0,13,"x","xrecruit","Dialogue 250 applications open for grade 6-8 social studies and ELA teachers in IN, KY and NC"],
+  [0,14,"li","recruit","Dialogue 250 Fellowship is open: earn up to $2,000"],
+  [0,14,"ig","igrecruit","Dialogue 250 is open: what you get and what it takes"],
+  [0,25,"ig","spotlight","Past Dialogue 250 fellow on what the year was like"],
+  [1,11,"li","recruit","Two weeks left to apply for Dialogue 250"],
+  [1,11,"ig","igrecruit","Two weeks left for Dialogue 250 (plus Stories countdown)"],
+  [1,24,"x","xrecruit","Last call for Dialogue 250 [deadline]"],
+  [2,4,"li","partner","SREB trained 6,000+ teachers in 38 states in three years"],
+  [2,11,"li","resource","Free Module Planning Guide for teacher teams"],
+  [2,17,"x","xstat","9+ months of extra growth (UCLA CRESST), link in first reply"],
+  [2,18,"li","stat","9+ months of extra growth (UCLA CRESST)"],
+  [3,7,"x","xrecruit","E2A is looking for middle schools to join the study"],
+  [3,8,"li","recruit","Principals: join the E2A Literacy Project (70 schools, 60,000 students)"],
+  [3,22,"li","expert","Where should leaders start? With student work, not test scores"],
+  [4,3,"ig","igthanks","Teacher Appreciation Week: thank you, teachers"],
+  [4,4,"li","thanks","National Teacher Day: thank you to [teacher team]"],
+  [4,5,"x","xrecap","Teacher Appreciation Week: thank you to partner schools"],
+  [4,6,"li","question","Tag a teacher who made writing click for your students"],
+  [4,6,"ig","reel","Teachers share why they teach writing in every subject"],
+  [4,13,"li","news","Welcome to the new Dialogue 250 fellows"],
+  [5,3,"li","stat","Literacy Design Collaborative's year in numbers"],
+  [5,10,"li","event","Sign up for [summer workshop]"]
+];
+const OFF = {"0-1":"New Year's Day","0-18":"MLK Day","1-15":"Presidents' Day","4-31":"Memorial Day","5-18":"Juneteenth"};
+const k = d => d.getMonth()+"-"+d.getDate();
+const iso = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const fromIso = s => { const [y,m,dd]=s.split("-").map(Number); return new Date(y,m-1,dd); };
+function nextOpen(d){ const x=new Date(d); while(x.getDay()===0||x.getDay()===6||OFF[k(x)]) x.setDate(x.getDate()+1); return x; }
+
+// Build the plan
+const posts = [];
+const sp = {};
+SPECIAL.forEach(s=>{(sp[s[0]+"-"+s[1]+"-"+s[2]]=sp[s[0]+"-"+s[1]+"-"+s[2]]||[]).push(s)});
+let w=0; const c={recap:0,thu:0,lesson:0,spotlight:0,reel:0,xstat:0,xrecap:0,xreply:0};
+const take=(key)=>IDEAS[key][c[key]++ % IDEAS[key].length];
+for(let d=new Date(2027,0,4); d<=new Date(2027,5,30); d.setDate(d.getDate()+7)){
+  w++;
+  const mon=new Date(d), tue=new Date(d), wed=new Date(d), thu=new Date(d);
+  tue.setDate(tue.getDate()+1); wed.setDate(wed.getDate()+2); thu.setDate(thu.getDate()+3);
+  const plan=[];
+  // LinkedIn: Tue recap, Thu rotation (2nd Thu of month = action)
+  plan.push(["li",tue,"recap",null]);
+  const t2=thu.getDate();
+  if(t2>=8&&t2<=14) plan.push(["li",thu,thu.getMonth()%2?"event":"resource",null]);
+  else plan.push(["li",thu,"__thu",null]);
+  // Instagram: Mon carousel (lesson / spotlight alternate), Thu reel
+  plan.push(["ig",mon,w%2?"lesson":"spotlight",null]);
+  plan.push(["ig",thu,"reel",null]);
+  // X: Wed rotation
+  plan.push(["x",wed,["xstat","xreply","xrecap"][w%3],null]);
+  plan.forEach(([p,day,t])=>{
+    if(day>new Date(2027,5,30)) return;
+    const real = nextOpen(day);
+    const s = sp[real.getMonth()+"-"+real.getDate()+"-"+p] || sp[day.getMonth()+"-"+day.getDate()+"-"+p];
+    if(s){ s.forEach(x=>{ if(!x.used){ x.used=1; posts.push({date:fromIso(iso(new Date(2027,x[0],x[1]))),p,t:x[3],title:x[4],big:true}); } }); return; }
+    let type=t, title;
+    if(t==="__thu"){ const pair=take("thu"); type=pair[0]; title=pair[1]; }
+    else if(t==="event") title="Sign up for [webinar] on [date]";
+    else if(t==="resource") title=["Free CoreTools sample modules by grade and subject","Free sample writing tasks for ELA, social studies and science","Free Module Planning Guide for teacher teams"][real.getMonth()%3];
+    else title=take(t);
+    posts.push({date:real,p,t:type,title,big:false});
+  });
+}
+// Specials that didn't land on a regular slot
+SPECIAL.forEach(x=>{ if(!x.used){ x.used=1; posts.push({date:new Date(2027,x[0],x[1]),p:x[2],t:x[3],title:x[4],big:true}); }});
+posts.sort((a,b)=>a.date-b.date);
+posts.forEach((p,i)=>{ p.id=i; p.orig=new Date(p.date); });
+
+// State
+const st={m:0,on:{li:true,ig:true,x:true},moves:{}};
+try{const s=JSON.parse(localStorage.getItem("ldcCal3")||"null"); if(s){st.m=s.m||0;Object.assign(st.on,s.on||{});st.moves=s.moves||{};}}catch(e){}
+const save=()=>{try{localStorage.setItem("ldcCal3",JSON.stringify(st))}catch(e){}};
+
+// Shared layer: on the Claude link moves and Canva links save for everyone; elsewhere they save in this browser
+const HAS_CLAUDE = !!(window.claude && typeof window.claude.use==="function");
+const SH={on:false,db:null,user:null,dl:null,canWrite:true,me:null,names:{}};
+let moves={};   // id -> {date, by}
+let ownMap={};  // layout key -> {url, by}
+if(!HAS_CLAUDE){
+  Object.keys(st.moves).forEach(id=>{ moves[id]={date:st.moves[id]}; });
+  try{const o=JSON.parse(localStorage.getItem("ldcCanvaOwn")||"{}"); Object.keys(o).forEach(k2=>ownMap[k2]={url:o[k2]});}catch(e){}
+}
+function applyMoves(){ posts.forEach(p=>{ p.date = moves[p.id] ? fromIso(moves[p.id].date) : new Date(p.orig); }); }
+applyMoves();
+const nameOf=uid=> uid ? (SH.names[uid]||"someone") : "";
+async function refreshNames(){
+  if(!SH.user) return;
+  const ids=[...new Set([...Object.values(moves),...Object.values(ownMap)].map(v=>v.by).filter(Boolean))];
+  if(!ids.length) return;
+  let changed=false;
+  try{
+    const ps=await SH.user.profiles(ids);
+    ids.forEach(id=>{ const n=(ps[id]&&ps[id].name)||"someone"; if(SH.names[id]!==n){SH.names[id]=n;changed=true;} });
+  }catch(e){}
+  if(changed) draw(true);
+}
+function setSync(text,kind){ const el=document.getElementById("sync"); if(!el) return; el.textContent=text; el.dataset.kind=kind||""; el.hidden=!text; }
+
+
+const keyEl=document.getElementById("key");
+keyEl.innerHTML=Object.keys(P).map(p=>`<button data-p="${p}" style="--cc:${P[p].color}" aria-pressed="true"><span class="dot"></span><b>${P[p].name}</b><small>${P[p].freq}</small></button>`).join("");
+keyEl.onclick=e=>{const b=e.target.closest("button");if(!b)return;st.on[b.dataset.p]=!st.on[b.dataset.p];save();draw();};
+
+const names=["Jan","Feb","Mar","Apr","May","Jun"];
+const monEl=document.getElementById("months");
+monEl.innerHTML=names.map((n,i)=>`<button data-m="${i}">${n}</button>`).join("");
+monEl.onclick=e=>{const b=e.target.closest("button");if(!b)return;st.m=+b.dataset.m;save();draw();};
+
+const resetBtn=document.getElementById("reset");
+let resetArmed=false, resetTimer=null;
+resetBtn.onclick=async()=>{
+  if(!resetArmed){ resetArmed=true; resetBtn.textContent="Click again to undo every move"; clearTimeout(resetTimer); resetTimer=setTimeout(()=>{resetArmed=false;resetBtn.textContent="Undo all moves";},4000); return; }
+  resetArmed=false; resetBtn.textContent="Undo all moves";
+  if(SH.on){
+    const ids=Object.keys(moves); moves={}; applyMoves(); draw();
+    for(const id of ids){ try{ await SH.db.collection("moves").doc("p"+id).delete(); }catch(e){ setSync("Some moves couldn't be undone. Refresh and try again.","warn"); } }
+  } else { st.moves={}; moves={}; applyMoves(); save(); draw(); }
+};
+
+const moved=o=>!!moves[o.id];
+const mvTag=o=>{ if(!moved(o)) return ""; const by=moves[o.id].by; return `<span class="mv">${by?"Moved by "+esc(nameOf(by)):"Moved"}</span>`; };
+const btn=o=>`<button class="post${o.big?" big":""}" draggable="${SH.canWrite}" data-i="${o.id}" style="--cc:${P[o.p].color}"><b>${P[o.p].name}${mvTag(o)}</b>${TYPES[o.t].label}</button>`;
+
+function draw(fromNames){
+  [...keyEl.children].forEach(b=>b.setAttribute("aria-pressed",st.on[b.dataset.p]));
+  [...monEl.children].forEach((b,i)=>b.setAttribute("aria-pressed",i===st.m));
+  resetBtn.hidden=!Object.keys(moves).length || !SH.canWrite;
+  document.getElementById("focus").innerHTML=`<b>${names[st.m]} focus:</b> ${FOCUS[st.m]}`;
+  const list=posts.filter(o=>o.date.getMonth()===st.m&&st.on[o.p]);
+  const first=new Date(2027,st.m,1), last=new Date(2027,st.m+1,0);
+  const s=new Date(first); s.setDate(s.getDate()-((s.getDay()+6)%7));
+  let h=["Mon","Tue","Wed","Thu","Fri"].map(x=>`<div class="dow">${x}</div>`).join("");
+  for(let d=new Date(s); !(d>last && d.getDay()===1); d.setDate(d.getDate()+1)){
+    const dw=d.getDay(); if(dw===0||dw===6) continue;
+    const out=d.getMonth()!==st.m, off=!out&&OFF[k(d)];
+    const items=out?[]:list.filter(o=>k(o.date)===k(d));
+    h+=`<div class="day${out?" out":""}${off?" off":""}"${!out&&!off?` data-date="${iso(d)}"`:""}><div class="dn"><span>${d.getDate()}</span>${off?`<em>${off}</em>`:""}</div>${items.map(btn).join("")}</div>`;
+  }
+  document.getElementById("cal").innerHTML=h;
+  const days={};
+  list.forEach(o=>{(days[k(o.date)]=days[k(o.date)]||{d:o.date,a:[]}).a.push(o)});
+  document.getElementById("list").innerHTML=Object.values(days).sort((a,b)=>a.d-b.d).map(g=>`<div class="lday"><h3>${g.d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</h3>${g.a.map(o=>`<button class="post${o.big?" big":""}" data-i="${o.id}" style="--cc:${P[o.p].color}"><b>${P[o.p].name} · ${TYPES[o.t].label}${mvTag(o)}</b>${o.title}</button>`).join("")}</div>`).join("")||"<p>No posts with these filters.</p>";
+  if(!fromNames) refreshNames();
+}
+
+async function moveTo(id,dateStr){
+  const p=posts[id], back=iso(p.orig)===dateStr;
+  if(!SH.canWrite){ setSync("View only. Ask the calendar owner for edit access to move posts.","warn"); return; }
+  if(back) delete moves[id]; else moves[id]={date:dateStr, by:SH.me||null};
+  applyMoves(); draw();
+  if(SH.on){
+    const ref=SH.db.collection("moves").doc("p"+id);
+    try{ if(back) await ref.delete(); else await ref.set({date:dateStr, by:SH.me||null, at:new Date().toISOString()}); }
+    catch(e){ setSync("That move didn't save for everyone. Check your connection and try again.","warn"); }
+  } else {
+    if(back) delete st.moves[id]; else st.moves[id]=dateStr; save();
+  }
+}
+
+// Drag and drop
+const cal=document.getElementById("cal");
+let dragId=null;
+cal.addEventListener("dragstart",e=>{const b=e.target.closest(".post");if(!b)return;dragId=+b.dataset.i;b.classList.add("dragging");e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",String(dragId));}catch(_){}});
+cal.addEventListener("dragend",e=>{const b=e.target.closest(".post");if(b)b.classList.remove("dragging");cal.querySelectorAll(".drop").forEach(x=>x.classList.remove("drop"));dragId=null;});
+cal.addEventListener("dragover",e=>{const d=e.target.closest(".day[data-date]");if(!d||dragId===null)return;e.preventDefault();e.dataTransfer.dropEffect="move";cal.querySelectorAll(".drop").forEach(x=>{if(x!==d)x.classList.remove("drop")});d.classList.add("drop");});
+cal.addEventListener("dragleave",e=>{const d=e.target.closest(".day");if(d&&!d.contains(e.relatedTarget))d.classList.remove("drop");});
+cal.addEventListener("drop",e=>{const d=e.target.closest(".day[data-date]");if(!d||dragId===null)return;e.preventDefault();moveTo(dragId,d.dataset.date);});
+
+
+const CV = {
+  li:{name:"LinkedIn post templates",url:"https://www.canva.com/d/cxBGg-si9n9C4xd"},
+  car:{name:"Instagram carousel templates",url:"https://www.canva.com/d/MuGLVuUUw-AjSwI"},
+  sto:{name:"Instagram Reel cover + Story templates",url:"https://www.canva.com/d/7EQ_dz7I6U3odEt"},
+  x:{name:"X post templates",url:"https://www.canva.com/d/eFtRSaKLjuiphj4"},
+  fly:{name:"LDC Recruitment Flyers",url:"https://www.canva.com/design/DAHaV6s53zA/9TgBQPjD7Gl1seB9hH8DIg/edit?utm_content=DAHaV6s53zA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton"}
+};
+// [file, page name to use]
+const LAYOUT = {
+  recap:[["li","\"Event Recap\" page"]],
+  tip:[["li","\"Try This\" page"]],
+  stat:[["li","\"Did you know?\" page"]],
+  partner:[["li","\"How did [district] address [challenge]?\" page"]],
+  story:[["li","\"Voices from the Classroom\" page"]],
+  thanks:[["li","\"Voices from the Classroom\" page (swap the quote for a thank-you)"]],
+  team:[["li","\"Behind the Work\" page"]],
+  expert:[["li","\"Behind the Work\" page (swap the tip for advice to leaders)"]],
+  question:[["li","\"Tell us in the comments\" page"]],
+  resource:[["li","\"Free Resource\" page"]],
+  event:[["li","\"Free Resource\" page (swap in the event name and date)"]],
+  news:[["li","\"Event Recap\" page (swap in the announcement)"]],
+  recruit_d250:[["fly","Page 8: Dialogue 250 one-pager (resize to square for social)"],["fly","Page 4: teacher flyer"]],
+  recruit_e2a:[["fly","Page 9: E2A flyer (resize to square for social)"],["fly","Page 3: school leadership flyer"]],
+  lesson:[["car","\"Mini Lesson\" slides (cover, Step 1, Step 2, Sample task, Try it this week, Send this)"]],
+  spotlight:[["car","\"Educator Spotlight\" slides (cover, quote, classroom photo, Try it)"]],
+  reel:[["sto","\"Classroom Moment\" or \"Teacher Explains\" cover"]],
+  igrecruit:[["fly","Page 8: Dialogue 250 one-pager (resize to 4:5)"],["sto","\"Applications close in [X] days\" Story"]],
+  igthanks:[["sto","\"Thank you, teachers!\" Story"],["car","\"Educator Spotlight\" slides"]],
+  xstat:[["x","Stat chart page"]],
+  xrecap:[["li","\"Event Recap\" page (works on X as is)"]],
+  xpin:[],
+  xreply:[],
+  xrecruit:[["x","\"Earn up to $2,000\" page"],["fly","Page 8: Dialogue 250 one-pager"]]
+};
+function layoutKey(o){
+  if(o.t==="recruit"||o.t==="xrecruit"||o.t==="igrecruit"){
+    const e2a=/E2A/.test(o.title);
+    if(o.t==="recruit") return e2a?"recruit_e2a":"recruit_d250";
+    if(o.t==="xrecruit"&&e2a) return "recruit_e2a";
+  }
+  return o.t;
+}
+const saveOwnLocal=()=>{try{const o={};Object.keys(ownMap).forEach(k2=>o[k2]=ownMap[k2].url);localStorage.setItem("ldcCanvaOwn",JSON.stringify(o))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function canvaBlock(o){
+  const lk=layoutKey(o), rows=LAYOUT[lk]||[];
+  const mineObj=ownMap[lk], mine=mineObj?mineObj.url:"";
+  const links=rows.map(([f,page])=>`<a class="cv" href="${CV[f].url}" target="_blank" rel="noopener"><b>Open in Canva</b><span>${CV[f].name} · ${page}</span></a>`).join("");
+  return `<div class="canva">
+    <h3>Canva layout</h3>
+    ${links || `<p class="none">No graphic needed for this one.</p>`}
+    ${mine?`<a class="cv mine" href="${esc(mine)}" target="_blank" rel="noopener"><b>Open your team's link</b><span>${mineObj.by?"Saved by "+esc(nameOf(mineObj.by))+" · ":""}${esc(mine)}</span></a>`:""}
+    ${SH.canWrite?`<label for="ownCv">Your team's own Canva link for every "${TYPES[o.t].label}" post</label>
+    <div class="row"><input type="url" id="ownCv" placeholder="Paste a Canva link" value="${esc(mine)}"><button id="ownSave">Save</button></div>`:""}
+    <div class="msg" id="ownMsg" aria-live="polite"></div>
+  </div>`;
+}
+
+// Detail panel
+const panel=document.getElementById("panel"), scrim=document.getElementById("scrim");
+let back=null;
+function open(i,src){
+  const o=posts[i], t=TYPES[o.t]; back=src;
+  panel.innerHTML=`<button class="x" id="close">Close</button>
+    <span class="tag" style="--cc:${P[o.p].color}">${P[o.p].name}</span>
+    <h2 id="pTitle">${o.title}</h2>
+    <div class="when">${o.date.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})} · ${t.label}${moved(o)?" · Moved from "+o.orig.toLocaleDateString("en-US",{month:"short",day:"numeric"})+(moves[o.id].by?" by "+esc(nameOf(moves[o.id].by)):""):""}</div>
+    <dl>
+      <div><dt>What to post</dt><dd>${t.show}</dd></div>
+      <div><dt>Caption</dt><dd>${t.cap}</dd></div>
+      <div><dt>End with</dt><dd>${t.ask}</dd></div>
+      <div><dt>After posting</dt><dd>${t.after}</dd></div>
+    </dl>
+    ${canvaBlock(o)}
+    <div class="move"${SH.canWrite?"":" hidden"}>
+      <label for="mvDate">Move to another date</label>
+      <div class="row"><input type="date" id="mvDate" min="2027-01-01" max="2027-06-30" value="${iso(o.date)}"><button id="mvGo">Move</button>${moved(o)?'<button id="mvBack" style="background:var(--paper);color:var(--ink);border:1px solid var(--line)">Put back</button>':""}</div>
+      <div class="msg" id="mvMsg" aria-live="polite"></div>
+    </div>`;
+  panel.classList.add("open");scrim.classList.add("open");panel.setAttribute("aria-hidden","false");
+  document.getElementById("close").onclick=close;
+  document.getElementById("mvGo").onclick=()=>{
+    const v=document.getElementById("mvDate").value, msg=document.getElementById("mvMsg");
+    if(!v){msg.textContent="Pick a date first.";return;}
+    const d=fromIso(v);
+    if(d<new Date(2027,0,1)||d>new Date(2027,5,30)){msg.textContent="Pick a date between Jan 1 and Jun 30, 2027.";return;}
+    if(d.getDay()===0||d.getDay()===6){msg.textContent="That's a weekend. Pick a weekday.";return;}
+    if(OFF[k(d)]){msg.textContent="That's "+OFF[k(d)]+". Pick another day.";return;}
+    moveTo(o.id,v); st.m=d.getMonth(); save(); draw(); close();
+  };
+  const os=document.getElementById("ownSave"); if(os) os.onclick=async()=>{
+    const v=document.getElementById("ownCv").value.trim(), msg=document.getElementById("ownMsg"), lk=layoutKey(o);
+    if(v && !/^https:\/\/([a-z0-9-]+\.)*canva\.(com|link)\//i.test(v)){msg.textContent="That doesn't look like a Canva link. It should start with https://www.canva.com/";return;}
+    if(v) ownMap[lk]={url:v,by:SH.me||null}; else delete ownMap[lk];
+    let ok=true;
+    if(SH.on){ const ref=SH.db.collection("canva").doc(lk); try{ if(v) await ref.set({url:v,by:SH.me||null,at:new Date().toISOString()}); else await ref.delete(); }catch(e){ ok=false; } }
+    else saveOwnLocal();
+    open(o.id,back);
+    document.getElementById("ownMsg").textContent=!ok?"That didn't save. Check your connection and try again.":v?(SH.on?"Saved for everyone on the calendar.":"Saved for every post of this type in this browser."):"Removed.";
+  };
+  const pb=document.getElementById("mvBack"); if(pb) pb.onclick=()=>{moveTo(o.id,iso(o.orig)); st.m=o.orig.getMonth(); save(); draw(); close();};
+  document.getElementById("close").focus();
+}
+function close(){panel.classList.remove("open");scrim.classList.remove("open");panel.setAttribute("aria-hidden","true");if(back&&document.body.contains(back))back.focus();}
+scrim.onclick=close;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});
+document.addEventListener("click",e=>{const b=e.target.closest(".post");if(b)open(+b.dataset.i,b);});
+
+// Excel export
+async function exportXlsx(){
+  const msg=document.getElementById("xlMsg");
+  await refreshNames();
+  if(typeof XLSX==="undefined"){ msg.textContent="Excel export couldn't load. Check your internet connection and refresh."; return; }
+  const rows = posts.slice().sort((a,b)=>a.date-b.date||a.p.localeCompare(b.p)).map(o=>{
+    const t=TYPES[o.t], lk=layoutKey(o), lay=LAYOUT[lk]||[];
+    const tmpl = ownMap[lk] ? ownMap[lk].url : (lay[0] ? CV[lay[0][0]].url : "");
+    const tmplName = ownMap[lk] ? "Your team's saved link" : (lay[0] ? CV[lay[0][0]].name+" · "+lay[0][1] : "No graphic needed");
+    return {
+      "Date": iso(o.date),
+      "Day": o.date.toLocaleDateString("en-US",{weekday:"long"}),
+      "Month": o.date.toLocaleDateString("en-US",{month:"long"}),
+      "Platform": P[o.p].name,
+      "Post type": t.label,
+      "Post idea": o.title,
+      "What to post": t.show,
+      "Caption": t.cap,
+      "End with": t.ask,
+      "After posting": t.after,
+      "Canva layout": tmplName,
+      "Canva link": tmpl,
+      "Campaign post": o.big ? "Yes" : "",
+      "Moved from": moved(o) ? iso(o.orig) : "",
+      "Moved by": moved(o) && moves[o.id].by ? nameOf(moves[o.id].by) : "",
+      "Status": "",
+      "Notes": ""
+    };
+  });
+  const widths=[12,11,10,11,24,48,48,44,36,36,40,40,10,12,16,12,30];
+  const sheet = data => { const ws=XLSX.utils.json_to_sheet(data); ws["!cols"]=widths.map(w=>({wch:w})); if(data.length) ws["!autofilter"]={ref:ws["!ref"]}; return ws; };
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, sheet(rows), "All posts");
+  ["LinkedIn","Instagram","X"].forEach(n=>XLSX.utils.book_append_sheet(wb, sheet(rows.filter(r=>r.Platform===n)), n));
+  const tm = Object.values(CV).map(c=>({"Canva file":c.name,"Link":c.url}));
+  const ws2=XLSX.utils.json_to_sheet(tm); ws2["!cols"]=[{wch:40},{wch:90}];
+  XLSX.utils.book_append_sheet(wb, ws2, "Canva templates");
+  const fname="LDC_Content_Calendar_Jan-Jun_2027.xlsx";
+  if(SH.dl){
+    try{
+      const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+      await SH.dl.save({filename:fname, data:new Blob([buf])});
+      msg.textContent="Downloaded "+rows.length+" posts.";
+    }catch(e){
+      const c=e&&e.code;
+      msg.textContent = c==="declined" ? "Download canceled." : c==="rate_limited" ? "A download is already waiting for you to confirm." : "Downloads aren't available here. Open the calendar in Claude on the web or desktop.";
+    }
+    return;
+  }
+  if(HAS_CLAUDE){ msg.textContent="Downloads aren't available in this view. Open the calendar in Claude on the web or desktop."; return; }
+  try{ XLSX.writeFile(wb, fname); msg.textContent="Downloaded "+rows.length+" posts."; }
+  catch(e){ msg.textContent="Your browser blocked the download. Open the calendar in its own tab and try again."; }
+}
+document.getElementById("xlBtn").onclick=exportXlsx;
+
+draw();
+
+async function initShared(){
+  if(!HAS_CLAUDE) return;
+  setSync("Connecting to the shared calendar...","");
+  let db=null,user=null,dl=null;
+  try{ [db,user,dl]=await Promise.all([window.claude.use("db"),window.claude.use("user"),window.claude.use("downloads")]); }catch(e){}
+  SH.user=user; SH.dl=dl;
+  if(!db){ setSync("Moves can't be shared in this view, so you're seeing the original plan.","warn"); SH.canWrite=false; draw(); return; }
+  SH.db=db; SH.on=true;
+  try{ SH.me=user?await user.id():null; }catch(e){}
+  let cw=null; try{ cw=user?await user.can("data.write"):null; }catch(e){}
+  SH.canWrite = cw!==false;
+  const t=setTimeout(()=>setSync("Can't reach the shared calendar yet. Moves may be out of date.","warn"),10000);
+  const ready=()=>{ clearTimeout(t); setSync(SH.canWrite?"Shared: moves show for everyone":"View only. Ask the calendar owner for edit access to move posts.", SH.canWrite?"ok":""); };
+  db.collection("moves").onSnapshot(snap=>{
+    const m={}; snap.docs.forEach(d=>{ const v=d.data(); if(v&&v.date) m[+d.id.slice(1)]={date:v.date,by:v.by||null}; });
+    moves=m; applyMoves(); draw(); if(!snap.metadata.fromCache) ready();
+  }, e=>{ clearTimeout(t); setSync(e.code==="revoked"?"":"Can't reach the shared calendar. Showing the last plan loaded.","warn"); });
+  db.collection("canva").onSnapshot(snap=>{
+    const m={}; snap.docs.forEach(d=>{ const v=d.data(); if(v&&v.url) m[d.id]={url:v.url,by:v.by||null}; });
+    ownMap=m; draw();
+  }, ()=>{});
+  draw();
+}
+initShared();
+
+function route(){
+  const how=location.hash==="#how";
+  document.getElementById("vCal").hidden=how;
+  document.getElementById("vHow").hidden=!how;
+  document.getElementById("tCal").setAttribute("aria-current",how?"false":"page");
+  document.getElementById("tHow").setAttribute("aria-current",how?"page":"false");
+}
+window.addEventListener("hashchange",route); route();
+})();
+
+</script>
+</body>
+</html>
